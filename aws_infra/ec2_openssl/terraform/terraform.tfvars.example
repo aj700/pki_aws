@@ -1,0 +1,25 @@
+# Example terraform.tfvars
+# Copy this file to terraform.tfvars and customize
+
+aws_region       = "eu-north-1"
+key_name         = "your-ssh-key-name"  # REQUIRED: Your EC2 key pair name
+instance_type    = "t3.micro"
+allowed_ssh_cidr = "0.0.0.0/0"          # Restrict to your IP for security
+
+# Certificate subject defaults (matching local PKI)
+organization_name  = "ACME Corporation"
+organizational_unit = "ACME Security"
+country            = "SE"
+state              = "Vastra Gotaland"
+locality           = "Gothenburg"
+
+# Certificate validity
+root_ca_validity_days         = 7500   # ~20 years
+intermediate_ca_validity_days = 1825   # 5 years
+subscriber_cert_validity_days = 365    # 1 year
+
+tags = {
+  Project     = "ACME-PKI"
+  Environment = "Development"
+  ManagedBy   = "Terraform"
+}
