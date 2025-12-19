@@ -1,4 +1,4 @@
-# PKI Implementation (ECDSA P-384)
+# Reference PKI Infrastructure in AWS
 
 This project demonstrates the implementation of a Public Key Infrastructure (PKI) using the Elliptic Curve Digital Signature Algorithm (ECDSA) with the P-384 curve.
 The setup includes a Root CA, Intermediate CA, and subscriber certificates, providing a complete chain of trust.
