@@ -1,78 +1,95 @@
 # AWS PKI Infrastructure
 
-Terraform configuration for deploying a complete PKI infrastructure in AWS using ACM Private CA.
+Two deployment paths for production-grade PKI infrastructure, both sharing a **single offline Root CA**.
 
 ## Architecture
 
-- **Root CA**: P-384 ECDSA, 20-year validity, signs Intermediate CA
-- **Intermediate CA**: P-384 ECDSA, 5-year validity, issues subscriber certs
-- **API Gateway**: REST API for certificate operations
-- **Lambda**: Enrollment and Root CA retrieval functions
-- **S3**: CRL and Root CA certificate distribution
-
-## REST API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/enroll` | POST | Submit CSR, receive subscriber + intermediate cert |
-| `/root` | GET | Download Root CA certificate |
-| `/crl` | GET | Download current CRL |
-
-OCSP is available directly via the URL embedded in certificates (AIA extension).
-
-## Prerequisites
-
-- AWS CLI configured with appropriate permissions
-- Terraform >= 1.0
-
-## Deployment
-
-```bash
-cd terraform
-
-# Initialize
-terraform init
-
-# Review plan
-terraform plan
-
-# Deploy (WARNING: ~$800/month for 2 CAs)
-terraform apply
+```
+                     LOCAL / OFFLINE
+                     ┌───────────────────────┐
+                     │ Root CA (P-384)       │
+                     │ pki_infra/rootCA/     │
+                     │ - Kept air-gapped     │
+                     │ - Signs both paths    │
+                     └───────────┬───────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+              ▼                  │                  ▼
+┌─────────────────────────┐      │     ┌─────────────────────────┐
+│  PATH A: Production     │      │     │  PATH B: Dev/Test       │
+│  ~$400/month            │      │     │  ~$15/month             │
+├─────────────────────────┤      │     ├─────────────────────────┤
+│  ACM Private CA         │      │     │  EC2 + OpenSSL          │
+│  HSM-backed (FIPS L3)   │      │     │  Software keys          │
+│  Managed OCSP + CRL     │      │     │  Manual CRL             │
+│  API Gateway + Lambda   │      │     │  NGINX + Flask          │
+└─────────────────────────┘      │     └─────────────────────────┘
+              │                  │                  │
+              └──────────────────┼──────────────────┘
+                                 │
+                     Subscribers trust the
+                     SAME Root CA
 ```
 
-## Post-Deployment Testing
+## Quick Start
+
+### Path A: Hybrid ACM PCA (Production)
 
 ```bash
-# Get the API URL
-API_URL=$(terraform output -raw api_gateway_url)
+cd path_a_acm_pca/terraform
+terraform init && terraform apply
 
-# Download Root CA
-curl ${API_URL}/root -o rootCA.crt
-
-# Enroll a certificate
-openssl ecparam -name secp384r1 -genkey -noout -out test.key
-openssl req -new -key test.key -out test.csr -subj "/CN=test.acme.com"
-curl -X POST ${API_URL}/enroll \
-  -H "Content-Type: application/x-pem-file" \
-  -d @test.csr
-
-# Download CRL
-curl ${API_URL}/crl -o crl.der
+# Then sign the Intermediate CSR with your offline Root CA
+# See path_a_acm_pca/DEPLOYMENT.md for full instructions
 ```
 
-## Cost Estimate
-
-| Service | Monthly Cost |
-|---------|--------------|
-| ACM PCA Root CA | ~$400 |
-| ACM PCA Intermediate CA | ~$400 |
-| Lambda, API Gateway, S3 | < $5 |
-| **Total** | **~$805** |
-
-> **Tip**: Disable Root CA after setup to reduce to ~$400/month.
-
-## Cleanup
+### Path B: EC2 + OpenSSL (Dev/Test)
 
 ```bash
-terraform destroy
+cd path_b_ec2_openssl/terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your key name and IP
+
+terraform init && terraform apply
+
+# Then sign the Intermediate CSR with your offline Root CA
+# See path_b_ec2_openssl/DEPLOYMENT.md for full instructions
 ```
+
+## Directory Structure
+
+```
+aws_infra/
+├── shared/                     # Common resources
+│   ├── sign_intermediate.sh    # Script to sign Intermediate CSR
+│   └── root_ca_setup.md        # Root CA management guide
+│
+├── path_a_acm_pca/            # Production path (~$400/mo)
+│   ├── terraform/             # ACM PCA Intermediate only
+│   ├── lambda/                # Enrollment functions
+│   ├── install_certificate.sh # Import signed cert
+│   └── DEPLOYMENT.md          # Step-by-step guide
+│
+└── path_b_ec2_openssl/        # Dev/Test path (~$15/mo)
+    ├── terraform/             # EC2 + OpenSSL
+    ├── scripts/               # user_data.sh for EC2 setup
+    └── DEPLOYMENT.md          # Step-by-step guide
+```
+
+## Comparison
+
+| Aspect | Path A (ACM PCA) | Path B (EC2) |
+|--------|------------------|--------------|
+| **Cost** | ~$400/month | ~$15/month |
+| **Key Security** | HSM (FIPS 140-2 L3) | Software (EBS) |
+| **OCSP** | ✅ AWS Managed | ❌ Manual |
+| **CRL** | ✅ Auto-publish | Manual script |
+| **HA/DR** | Multi-AZ | Single EC2 |
+| **Best For** | Production | Dev/Test |
+
+## Root CA
+
+Both paths use your offline Root CA located at `../pki_infra/rootCA/`.
+
+See [shared/root_ca_setup.md](shared/root_ca_setup.md) for Root CA management instructions.

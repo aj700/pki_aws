@@ -1,0 +1,14 @@
+aws_region       = "eu-north-1"
+key_name         = "your-key-name"         # CHANGE THIS
+allowed_ssh_cidr = "0.0.0.0/0"             # RESTRICT THIS in production
+
+# Organization details (customize as needed)
+organization_name   = "ACME Corporation"
+organizational_unit = "ACME Security"
+country             = "SE"
+state               = "Vastra Gotaland"
+locality            = "Gothenburg"
+
+# Certificate validity
+intermediate_ca_validity_days = 1825  # 5 years
+subscriber_cert_validity_days = 365   # 1 year
