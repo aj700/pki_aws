@@ -38,14 +38,14 @@ LOCAL (Offline)                    AWS (EC2)
 - [ ] AWS CLI configured
 - [ ] Terraform >= 1.0
 - [ ] EC2 Key Pair created
-- [ ] Root CA generated (see `pki_infra/rootCA/`)
+- [ ] Root CA generated (see `Local_Root_CA/rootCA/`)
 
 ---
 
 ## Step 1: Configure Variables
 
 ```bash
-cd aws_infra/path_b_ec2_openssl/terraform
+cd AWS_Intermediate_CA/path_b_ec2_openssl/terraform
 
 # Create tfvars file
 cat > terraform.tfvars << EOF
@@ -101,7 +101,7 @@ scp -i ~/.ssh/your-key.pem ec2-user@$PKI_IP:/opt/pki/intermediateCA/csr/interCA.
 ⚠️ **This step should be done on an air-gapped machine**
 
 ```bash
-cd aws_infra/shared
+cd AWS_Intermediate_CA/shared
 
 ./sign_intermediate.sh \
     ../path_b_ec2_openssl/intermediate_csr.pem \
@@ -115,7 +115,7 @@ cd aws_infra/shared
 
 ```bash
 scp -i ~/.ssh/your-key.pem intermediate.crt ec2-user@$PKI_IP:/tmp/
-scp -i ~/.ssh/your-key.pem ../../pki_infra/rootCA/certs/rootCA.crt ec2-user@$PKI_IP:/tmp/
+scp -i ~/.ssh/your-key.pem ../../Local_Root_CA/rootCA/certs/rootCA.crt ec2-user@$PKI_IP:/tmp/
 ```
 
 ---

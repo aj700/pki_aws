@@ -38,27 +38,31 @@ pqc_PKI/
 │   ├── certs/
 │   ├── csr/
 │   └── private/
-├── intermediateCA/
-│   ├── certs/
-│   ├── csr/
-│   ├── newcerts/
-│   └── private/
-└── rootCA/
-    ├── certs/
-    ├── crl/
-    ├── newcerts/
-    ├── private/
-    └── rootCA.conf
+├── Local_Root_CA/
+│   ├── intermediateCA/
+│   │   ├── certs/
+│   │   ├── csr/
+│   │   ├── newcerts/
+│   │   └── private/
+│   └── rootCA/
+│       ├── certs/
+│       ├── crl/
+│       ├── newcerts/
+│       ├── private/
+│       └── rootCA.conf
+└── AWS_Intermediate_CA/
+    └── (See sub-README)
 ```
 
 ## Implementation Steps
 
 ### 1. Create Directory Structure
 ```bash
-mkdir -p pqc_PKI/{rootCA,intermediateCA,PKIsubscriber}
+mkdir -p pqc_PKI/{Local_Root_CA,PKIsubscriber}
 cd pqc_PKI
-mkdir -p rootCA/{certs,crl,newcerts,private}
-mkdir -p intermediateCA/{certs,csr,newcerts,private}
+mkdir -p Local_Root_CA/{rootCA,intermediateCA}
+mkdir -p Local_Root_CA/rootCA/{certs,crl,newcerts,private}
+mkdir -p Local_Root_CA/intermediateCA/{certs,csr,newcerts,private}
 mkdir -p PKIsubscriber/{certs,csr,private}
 ```
 
@@ -67,19 +71,19 @@ mkdir -p PKIsubscriber/{certs,csr,private}
 ```bash
 # Generate P-384 ECDSA key pair
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 \
-    -out rootCA/private/rootCA_p384.key
+    -out Local_Root_CA/rootCA/private/rootCA_p384.key
 
 # Create configuration file rootCA.conf
 # (Configuration content provided below)
 
 # Initialize database files
-echo 1000 > rootCA/serial
-touch rootCA/index
-echo 1000 > rootCA/crlnumber
+echo 1000 > Local_Root_CA/rootCA/serial
+touch Local_Root_CA/rootCA/index
+echo 1000 > Local_Root_CA/rootCA/crlnumber
 
 # Generate and sign root certificate
-openssl req -config rootCA/rootCA.conf -key rootCA/private/rootCA_p384.key \
-    -new -x509 -days 7500 -extensions v3_ca -out rootCA/certs/rootCA.crt
+openssl req -config Local_Root_CA/rootCA/rootCA.conf -key Local_Root_CA/rootCA/private/rootCA_p384.key \
+    -new -x509 -days 7500 -extensions v3_ca -out Local_Root_CA/rootCA/certs/rootCA.crt
 ```
 
 ### 3. Generate Intermediate CA
@@ -87,23 +91,23 @@ openssl req -config rootCA/rootCA.conf -key rootCA/private/rootCA_p384.key \
 ```bash
 # Generate P-384 ECDSA key pair
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 \
-    -out intermediateCA/private/intermediateCA_p384.key
+    -out Local_Root_CA/intermediateCA/private/intermediateCA_p384.key
 
 # Initialize database files
-echo 1000 > intermediateCA/serial
-touch intermediateCA/index
-echo 1000 > intermediateCA/crlnumber
+echo 1000 > Local_Root_CA/intermediateCA/serial
+touch Local_Root_CA/intermediateCA/index
+echo 1000 > Local_Root_CA/intermediateCA/crlnumber
 
 # Create CSR
-openssl req -config intermediateCA/interCA.conf \
-    -key intermediateCA/private/intermediateCA_p384.key \
-    -new -out intermediateCA/csr/interCA.csr
+openssl req -config Local_Root_CA/intermediateCA/interCA.conf \
+    -key Local_Root_CA/intermediateCA/private/intermediateCA_p384.key \
+    -new -out Local_Root_CA/intermediateCA/csr/interCA.csr
 
 # Sign intermediate certificate using Root CA
-openssl ca -config rootCA/rootCA.conf -extensions v3_intermediate_ca \
+openssl ca -config Local_Root_CA/rootCA/rootCA.conf -extensions v3_intermediate_ca \
     -days 1825 -notext -md sha384 \
-    -in intermediateCA/csr/interCA.csr \
-    -out intermediateCA/certs/interCA.crt
+    -in Local_Root_CA/intermediateCA/csr/interCA.csr \
+    -out Local_Root_CA/intermediateCA/certs/interCA.crt
 ```
 
 ### 4. Generate Subscriber Certificates
@@ -123,7 +127,7 @@ openssl req -config PKIsubscriber/tls_subscriber.conf \
     -new -out PKIsubscriber/csr/tls.csr
 
 # Sign TLS certificate using Intermediate CA
-openssl ca -config intermediateCA/interCA.conf -extensions tls_cert \
+openssl ca -config Local_Root_CA/intermediateCA/interCA.conf -extensions tls_cert \
     -days 365 -notext -md sha384 \
     -in PKIsubscriber/csr/tls.csr \
     -out PKIsubscriber/certs/tls.crt
@@ -142,7 +146,7 @@ openssl req -config PKIsubscriber/encryption_subscriber.conf \
     -new -out PKIsubscriber/csr/encryption.csr
 
 # Sign encryption certificate using Intermediate CA
-openssl ca -config intermediateCA/interCA.conf -extensions encryption_cert \
+openssl ca -config Local_Root_CA/intermediateCA/interCA.conf -extensions encryption_cert \
     -days 365 -notext -md sha384 \
     -in PKIsubscriber/csr/encryption.csr \
     -out PKIsubscriber/certs/encryption.crt
@@ -156,7 +160,7 @@ openssl ca -config intermediateCA/interCA.conf -extensions encryption_cert \
 default_ca = CA_default
 
 [ CA_default ]
-dir               = /home/user/pqc_PKI/rootCA
+dir               = /home/user/pqc_PKI/Local_Root_CA/rootCA
 certs             = $dir/certs
 crl_dir           = $dir/crl
 new_certs_dir     = $dir/newcerts
@@ -222,7 +226,7 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
 default_ca = CA_default
 
 [ CA_default ]
-dir               = /home/user/pqc_PKI/intermediateCA
+dir               = /home/user/pqc_PKI/Local_Root_CA/intermediateCA
 certs             = $dir/certs
 crl_dir           = $dir/crl
 new_certs_dir     = $dir/newcerts
@@ -332,13 +336,13 @@ CN = ACME Data Encryption Service
 # Create PKCS#7 bundle for TLS certificate distribution
 openssl crl2pkcs7 -nocrl \
     -certfile PKIsubscriber/certs/tls.crt \
-    -certfile intermediateCA/certs/interCA.crt \
+    -certfile Local_Root_CA/intermediateCA/certs/interCA.crt \
     -out tls_cert_chain.p7b
 
 # Create PKCS#7 bundle for encryption certificate distribution
 openssl crl2pkcs7 -nocrl \
     -certfile PKIsubscriber/certs/encryption.crt \
-    -certfile intermediateCA/certs/interCA.crt \
+    -certfile Local_Root_CA/intermediateCA/certs/interCA.crt \
     -out encryption_cert_chain.p7b
 ```
 
@@ -346,13 +350,13 @@ openssl crl2pkcs7 -nocrl \
 
 ```bash
 # Verify the TLS certificate chain
-openssl verify -show_chain -CAfile rootCA/certs/rootCA.crt \
-    -untrusted intermediateCA/certs/interCA.crt \
+openssl verify -show_chain -CAfile Local_Root_CA/rootCA/certs/rootCA.crt \
+    -untrusted Local_Root_CA/intermediateCA/certs/interCA.crt \
     PKIsubscriber/certs/tls.crt
 
 # Verify the encryption certificate chain
-openssl verify -show_chain -CAfile rootCA/certs/rootCA.crt \
-    -untrusted intermediateCA/certs/interCA.crt \
+openssl verify -show_chain -CAfile Local_Root_CA/rootCA/certs/rootCA.crt \
+    -untrusted Local_Root_CA/intermediateCA/certs/interCA.crt \
     PKIsubscriber/certs/encryption.crt
 ```
 

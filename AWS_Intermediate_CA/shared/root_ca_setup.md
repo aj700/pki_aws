@@ -4,14 +4,14 @@ This guide explains how to manage the shared offline Root CA used by both AWS de
 
 ## Root CA Location
 
-The Root CA is located at `pki_infra/rootCA/` and should be kept **offline** (air-gapped) whenever possible.
+The Root CA is located at `Local_Root_CA/rootCA/` and should be kept **offline** (air-gapped) whenever possible.
 
 ## Initial Setup
 
 If you haven't already generated the Root CA, follow these steps:
 
 ```bash
-cd pki_infra/rootCA
+cd Local_Root_CA/rootCA
 
 # Generate P-384 ECDSA key pair
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-384 \
@@ -35,7 +35,7 @@ When deploying either Path A (ACM PCA) or Path B (EC2+OpenSSL), you'll need to s
 Use the shared script:
 
 ```bash
-cd aws_infra/shared
+cd AWS_Intermediate_CA/shared
 
 # Sign an Intermediate CA CSR
 ./sign_intermediate.sh <path_to_csr.pem> <output_cert.crt> [validity_days]
@@ -61,7 +61,7 @@ After any deployment, upload the Root CA certificate to accessible locations:
 
 ```bash
 # Copy to S3 (for Path A)
-aws s3 cp pki_infra/rootCA/certs/rootCA.crt s3://your-bucket/rootCA.crt \
+aws s3 cp Local_Root_CA/rootCA/certs/rootCA.crt s3://your-bucket/rootCA.crt \
     --content-type "application/x-pem-file"
 
 # The EC2 deployment (Path B) serves it automatically via the API

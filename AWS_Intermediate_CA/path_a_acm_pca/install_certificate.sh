@@ -13,7 +13,7 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CERT_FILE="${1:-$SCRIPT_DIR/intermediate.crt}"
-ROOT_CERT="${2:-$SCRIPT_DIR/../pki_infra/rootCA/certs/rootCA.crt}"
+ROOT_CERT="${2:-$SCRIPT_DIR/../../Local_Root_CA/rootCA/certs/rootCA.crt}"
 
 # Get the CA ARN from Terraform
 cd "$SCRIPT_DIR/terraform"

@@ -21,7 +21,7 @@ usage() {
     echo "  validity_days    Certificate validity (default: 1825 = 5 years)"
     echo ""
     echo "Environment variables:"
-    echo "  ROOT_CA_DIR      Path to Root CA directory (default: ../../pki_infra/rootCA)"
+    echo "  ROOT_CA_DIR      Path to Root CA directory (default: ../../Local_Root_CA/rootCA)"
     exit 1
 }
 
@@ -36,12 +36,12 @@ VALIDITY_DAYS="${3:-1825}"
 
 # Find Root CA directory
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_CA_DIR="${ROOT_CA_DIR:-$SCRIPT_DIR/../../pki_infra/rootCA}"
+ROOT_CA_DIR="${ROOT_CA_DIR:-$SCRIPT_DIR/../../Local_Root_CA/rootCA}"
 
 # Validate Root CA exists
 if [ ! -f "$ROOT_CA_DIR/private/rootCA_p384.key" ]; then
     echo -e "${RED}Error: Root CA private key not found at $ROOT_CA_DIR/private/rootCA_p384.key${NC}"
-    echo "Make sure you have generated the Root CA first using pki_infra/rootCA"
+    echo "Make sure you have generated the Root CA first using Local_Root_CA/rootCA"
     exit 1
 fi
 

@@ -8,7 +8,7 @@ Two deployment paths for production-grade PKI infrastructure, both sharing a **s
                      LOCAL / OFFLINE
                      ┌───────────────────────┐
                      │ Root CA (P-384)       │
-                     │ pki_infra/rootCA/     │
+                     │ Local_Root_CA/rootCA/ │
                      │ - Kept air-gapped     │
                      │ - Signs both paths    │
                      └───────────┬───────────┘
@@ -60,7 +60,7 @@ terraform init && terraform apply
 ## Directory Structure
 
 ```
-aws_infra/
+AWS_Intermediate_CA/
 ├── shared/                     # Common resources
 │   ├── sign_intermediate.sh    # Script to sign Intermediate CSR
 │   └── root_ca_setup.md        # Root CA management guide
@@ -90,6 +90,6 @@ aws_infra/
 
 ## Root CA
 
-Both paths use your offline Root CA located at `../pki_infra/rootCA/`.
+Both paths use your offline Root CA located at `../Local_Root_CA/rootCA/`.
 
 See [shared/root_ca_setup.md](shared/root_ca_setup.md) for Root CA management instructions.

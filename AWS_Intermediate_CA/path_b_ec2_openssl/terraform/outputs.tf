@@ -61,7 +61,7 @@ output "next_steps" {
     
     5. Upload the signed cert and Root CA:
        scp -i ~/.ssh/${var.key_name}.pem intermediate.crt ec2-user@${aws_eip.pki_server.public_ip}:/tmp/
-       scp -i ~/.ssh/${var.key_name}.pem ../../pki_infra/rootCA/certs/rootCA.crt ec2-user@${aws_eip.pki_server.public_ip}:/tmp/
+       scp -i ~/.ssh/${var.key_name}.pem ../../Local_Root_CA/rootCA/certs/rootCA.crt ec2-user@${aws_eip.pki_server.public_ip}:/tmp/
     
     6. Install certificates (on EC2):
        sudo /opt/pki/scripts/import_signed_cert.sh /tmp/intermediate.crt /tmp/rootCA.crt

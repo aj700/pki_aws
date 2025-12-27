@@ -55,7 +55,7 @@ output "next_steps" {
        ./sign_intermediate.sh ../path_a_acm_pca/intermediate_csr.pem ../path_a_acm_pca/intermediate.crt
     
     3. Upload Root CA certificate to S3:
-       aws s3 cp ../../pki_infra/rootCA/certs/rootCA.crt s3://${aws_s3_bucket.root_ca_bucket.id}/rootCA.crt
+       aws s3 cp ../../Local_Root_CA/rootCA/certs/rootCA.crt s3://${aws_s3_bucket.root_ca_bucket.id}/rootCA.crt
     
     4. Install the signed certificate:
        ./install_certificate.sh

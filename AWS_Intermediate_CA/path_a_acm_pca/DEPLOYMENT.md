@@ -37,14 +37,14 @@ LOCAL (Offline)                    AWS Cloud
 
 - [ ] AWS CLI configured
 - [ ] Terraform >= 1.0
-- [ ] Root CA generated (see `pki_infra/rootCA/`)
+- [ ] Root CA generated (see `Local_Root_CA/rootCA/`)
 
 ---
 
 ## Step 1: Deploy Infrastructure
 
 ```bash
-cd aws_infra/path_a_acm_pca/terraform
+cd AWS_Intermediate_CA/path_a_acm_pca/terraform
 
 terraform init
 terraform plan
@@ -74,7 +74,7 @@ openssl req -in ../intermediate_csr.pem -noout -text
 ⚠️ **This step should be done on an air-gapped machine with the Root CA**
 
 ```bash
-cd aws_infra/shared
+cd AWS_Intermediate_CA/shared
 
 ./sign_intermediate.sh \
     ../path_a_acm_pca/intermediate_csr.pem \
@@ -87,7 +87,7 @@ cd aws_infra/shared
 ## Step 4: Install the Signed Certificate
 
 ```bash
-cd aws_infra/path_a_acm_pca
+cd AWS_Intermediate_CA/path_a_acm_pca
 
 chmod +x install_certificate.sh
 ./install_certificate.sh
